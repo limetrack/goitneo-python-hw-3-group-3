@@ -1,5 +1,11 @@
 import datetime
 import re
+from collections import UserDict
+
+class Field:
+    def __init__(self, value):
+        self.value = value
+
 
 class Birthday(Field):
     def __init__(self, value):
@@ -49,6 +55,58 @@ class AddressBook(UserDict):
                 if today <= birthday_this_year < one_week:
                     birthdays.append(record.name.value)
         return birthdays
+    
+def input_error(func):
+    def inner(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except KeyError:
+            return "Contact not found."
+        except ValueError:
+            return "Invalid value. Please enter correct information."
+        except IndexError:
+            return "Invalid number of arguments."
+        except Exception as e:
+            return f"Unexpected error: {e}"
+    return inner
+
+@input_error
+def add_contact(args, contacts):
+    if len(args) != 2:
+        raise ValueError("Invalid number of arguments.")
+    name, phone = args
+    contacts[name] = phone
+    return "Contact added."
+
+@input_error
+def change_contact(args, contacts):
+    if len(args) != 2:
+        raise ValueError("Invalid number of arguments.")
+    name, new_phone = args
+    if name in contacts:
+        contacts[name] = new_phone
+        return "Contact updated."
+    else:
+        raise KeyError("Contact not found.")
+
+@input_error
+def show_phone(args, contacts):
+    if len(args) != 1:
+        raise ValueError("Invalid number of arguments.")
+    name = args[0]
+    if name in contacts:
+        return contacts[name]
+    else:
+        raise KeyError("Contact not found.")
+
+def show_all(contacts):
+    return "\n".join([f"{name}: {phone}" for name, phone in contacts.items()])
+
+def parse_input(user_input):
+    parts = user_input.split()
+    cmd = parts[0].lower()
+    args = parts[1:]
+    return cmd, args
 
 def main():
     book = AddressBook()
@@ -64,13 +122,13 @@ def main():
         elif command == "hello":
             print("How can I help you?")
         elif command == "add":
-            print(add_contact(args, contacts))
+            print(add_contact(args, book))
         elif command == "change":
-            print(change_contact(args, contacts))
+            print(change_contact(args, book))
         elif command == "phone":
-            print(show_phone(args, contacts))
+            print(show_phone(args, book))
         elif command == "all":
-            print(show_all(contacts))
+            print(show_all(book))
         elif command == "add-birthday":
             name, birthday = args
             record = book.find(name)
